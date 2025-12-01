@@ -21,11 +21,10 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # 🔴 FIX: use a file inside the directory, consistent with the YAML
     output_file = output_dir / f"{args.name}_predicted_labels.txt"
 
     print(f"📄 Output will be saved to: {output_file}")
-
-    run_script = Path(__file__).resolve().parents[1] / "cyanno_pipeline" / "run_cyanno.py"
 
     cmd = [
         "python",
