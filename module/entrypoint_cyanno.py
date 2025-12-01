@@ -21,7 +21,7 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_file = output_dir / f"{args.name}_predicted_labels_CyAnno.txt"
+    output_file = output_dir / f"{args.name}_predicted_labels.txt"
 
     print(f"📄 Output will be saved to: {output_file}")
 
