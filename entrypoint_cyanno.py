@@ -37,17 +37,17 @@ def main():
     print("🚀 Running CyAnno pipeline:")
     print("   ", " ".join(cmd))
 
+    # Let the subprocess print directly to stdout/stderr so Snakemake captures it
     result = subprocess.run(cmd)
 
-    print("========== STDOUT ==========")
-    print(result.stdout)
-    print("========== STDERR ==========")
-    print(result.stderr)
-
     if result.returncode != 0:
-        raise RuntimeError(f"❌ CyAnno crashed (exit {result.returncode})")
+        # propagate the error code so the workflow fails, 
+        # but we keep the *real* traceback from CyAnno in stderr.log
+        import sys
+        sys.exit(result.returncode)
 
     print(f"🎉 SUCCESS — prediction saved to {output_file}")
+
 
 if __name__ == "__main__":
     main()
