@@ -29,7 +29,7 @@ def main():
 
     # OUTPUT: Must match benchmark YAML: {dataset}_predicted_labels.tar.gz
     output_file = output_dir / f"{args.name}_predicted_labels.tar.gz"
-    print(f"📄 Output will be saved to: {output_file}", flush=True)
+    print(f"Output will be saved to: {output_file}", flush=True)
 
     # Repo root in the cloned module
     repo_root = Path(__file__).resolve().parent
@@ -44,15 +44,15 @@ def main():
         str(output_file),
     ]
 
-    print("🚀 Running CyAnno pipeline:")
+    print("Running CyAnno pipeline:")
     print("   ", " ".join(cmd), flush=True)
 
     result = subprocess.run(cmd)
 
     if result.returncode != 0:
-        raise RuntimeError(f"❌ CyAnno crashed (exit {result.returncode})")
+        raise RuntimeError(f"CyAnno crashed (exit {result.returncode})")
 
-    print(f"🎉 SUCCESS — prediction saved to {output_file}", flush=True)
+    print(f"SUCCESS — prediction saved to {output_file}", flush=True)
 
 if __name__ == "__main__":
     main()

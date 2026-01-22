@@ -1,7 +1,8 @@
 rule cyannotool:
     input:
-        matrix="data.matrix",
-        labels="data.true_labels"
+        train_matrix="data.train_matrix",
+        train_labels="data.train_labels",
+        test_matrix="data.test_matrix"
     output:
         pred="analysis.prediction.cyannotool"
     params:
@@ -11,6 +12,7 @@ rule cyannotool:
         python {workflow.basedir}/entrypoint_cyanno.py \
             --output_dir $(dirname {output.pred}) \
             --name {params.name} \
-            --data.matrix {input.matrix} \
-            --data.true_labels {input.labels}
+            --data.train_matrix {input.train_matrix} \
+            --data.train_labels {input.train_labels} \
+            --data.test_matrix {input.test_matrix}
         """

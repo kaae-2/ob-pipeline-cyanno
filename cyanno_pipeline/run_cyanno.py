@@ -9,7 +9,6 @@ import warnings
 from pathlib import Path
 from typing import List
 
-# --- Make sure `cyanno_pipeline` can be imported ---
 THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
 if str(REPO_ROOT) not in sys.path:
