@@ -16,6 +16,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from cyanno_pipeline.cyanno import CyAnnoClassifier
 
+UNGATED_LABEL_TOKENS = {"", "unlabeled", "ungated", "0", "0.0"}
+
+
+def _is_ungated_label(labels: pd.Series) -> pd.Series:
+    normalized = labels.astype(str).str.strip().str.lower()
+    return labels.isna() | normalized.isin(UNGATED_LABEL_TOKENS)
+
+
 # --- Helper to load specific file types ---
 def load_dataframe(path, header=None, names=None):
     """
@@ -32,6 +40,8 @@ def load_dataframe(path, header=None, names=None):
                 if not csv_member:
                     raise ValueError(f"No CSV found in {path}")
                 f = tar.extractfile(csv_member)
+                if f is None:
+                    raise ValueError(f"Unable to read {csv_member.name} from {path}")
                 return pd.read_csv(f, header=header, names=names)
         except Exception:
             # If tar fails, try treating it as a misnamed gzip
@@ -57,8 +67,21 @@ def main(train_matrix_path, train_labels_path, test_matrix_tar_path, output_path
     if len(train_matrix_df) != len(train_labels_df):
         raise ValueError(f"Mismatch: {len(train_matrix_df)} train cells vs {len(train_labels_df)} labels")
 
-    # Merge for training
-    train_df = pd.concat([train_matrix_df, train_labels_df], axis=1).dropna(subset=["cell_type"])
+    # Merge for training and remove ungated cells from training labels
+    merged_train_df = pd.concat([train_matrix_df, train_labels_df], axis=1)
+    label_series = merged_train_df.iloc[:, -1].rename("cell_type")
+    merged_train_df["cell_type"] = label_series
+    ungated_mask = _is_ungated_label(label_series)
+    removed_count = int(ungated_mask.sum())
+    train_df = merged_train_df.loc[~ungated_mask].copy()
+    print(
+        f"Filtered ungated training rows: removed={removed_count}, kept={len(train_df)}",
+        flush=True,
+    )
+    if train_df.empty:
+        raise ValueError(
+            "No labeled training rows remain after excluding ungated/unlabeled labels."
+        )
     
     # Generate generic marker names (M0, M1...) since files have no header
     marker_names = [f"M{i}" for i in range(train_matrix_df.shape[1])]
@@ -93,6 +116,8 @@ def main(train_matrix_path, train_labels_path, test_matrix_tar_path, output_path
                 
                 # Extract and load the specific test file
                 f = tar_in.extractfile(member)
+                if f is None:
+                    raise ValueError(f"Unable to read {member.name} from {test_matrix_tar_path}")
                 test_sample_df = pd.read_csv(f, header=None)
                 
                 # Ensure columns match training
