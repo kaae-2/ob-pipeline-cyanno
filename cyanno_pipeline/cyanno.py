@@ -20,7 +20,6 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     f1_score,
     classification_report,
@@ -29,7 +28,7 @@ from sklearn.metrics import (
 import pickle
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, cast
 import warnings
 
 # Suppress unnecessary warnings for cleaner workflow logs
@@ -49,13 +48,8 @@ class CyAnnoClassifier:
         Feature names (column names) to use in training and prediction.
 
     normalize : bool
-        Whether to normalize the data using StandardScaler.
-
     classifier : RandomForestClassifier
         Underlying ML model used for classification.
-
-    scaler : StandardScaler or None
-        Fitted scaler used when normalization is enabled.
 
     cell_types : List[str]
         Sorted list of unique cell type labels seen during training.
@@ -66,7 +60,6 @@ class CyAnnoClassifier:
 
     def __init__(self,
                  markers: List[str],
-                 normalize: bool = True,
                  random_state: int = 42):
         """
         Constructor for CyAnnoClassifier.
@@ -75,17 +68,12 @@ class CyAnnoClassifier:
         ----------
         markers : list of str
             Names of the marker columns to use.
-
-        normalize : bool, default=True
-            Whether to scale features using StandardScaler.
-
         random_state : int
             Seed to ensure reproducibility.
         """
 
         # Store configuration
         self.markers = markers
-        self.normalize = normalize
         self.random_state = random_state
 
         # Main machine learning model
@@ -94,9 +82,6 @@ class CyAnnoClassifier:
             random_state=random_state,
             n_jobs=-1           # Use all CPU cores
         )
-
-        # Optional normalization step
-        self.scaler = StandardScaler() if normalize else None
 
         self.cell_types = None
         self.is_trained = False
@@ -111,7 +96,7 @@ class CyAnnoClassifier:
     # ----------------------------------------------------------------------
     def _preprocess_data(self, data: pd.DataFrame) -> np.ndarray:
         """
-        Internal method: Extracts marker columns and applies normalization.
+        Internal method: Extracts marker columns without extra transformation.
 
         Parameters
         ----------
@@ -126,17 +111,7 @@ class CyAnnoClassifier:
         # select only the relevant marker columns
         marker_data = data[self.markers].copy()
 
-        # convert to numpy for ML input
-        X = marker_data.values
-
-        # apply scaling (fit during training, transform during prediction)
-        if self.normalize and self.scaler is not None:
-            if self.is_trained:
-                X = self.scaler.transform(X)
-            else:
-                X = self.scaler.fit_transform(X)
-
-        return X
+        return marker_data.to_numpy()
 
 
     # ----------------------------------------------------------------------
@@ -249,8 +224,8 @@ class CyAnnoClassifier:
 
         X = self._preprocess_data(data)
 
-        predictions = self.classifier.predict(X)
-        probabilities = self.classifier.predict_proba(X)
+        predictions = cast(np.ndarray, self.classifier.predict(X))
+        probabilities = cast(np.ndarray, self.classifier.predict_proba(X))
 
         return predictions, probabilities
 
@@ -285,12 +260,15 @@ class CyAnnoClassifier:
 
         f1_weighted = f1_score(true_labels, predictions, average='weighted')
         f1_macro = f1_score(true_labels, predictions, average='macro')
-        f1_per_class = f1_score(true_labels, predictions, average=None)
+        f1_per_class = cast(
+            np.ndarray,
+            f1_score(true_labels, predictions, average=None),  # type: ignore[arg-type]
+        )
 
         metrics = {
             'f1_weighted': f1_weighted,
             'f1_macro': f1_macro,
-            'f1_per_class': dict(zip(self.cell_types, f1_per_class)),
+            'f1_per_class': dict(zip(self.cell_types or [], f1_per_class.tolist())),
             'classification_report': classification_report(true_labels, predictions),
             'confusion_matrix': confusion_matrix(true_labels, predictions).tolist(),
             'n_test_samples': len(test_data)
@@ -312,10 +290,8 @@ class CyAnnoClassifier:
 
         model_data = {
             'classifier': self.classifier,
-            'scaler': self.scaler,
             'markers': self.markers,
             'cell_types': self.cell_types,
-            'normalize': self.normalize,
             'random_state': self.random_state
         }
 
@@ -332,10 +308,8 @@ class CyAnnoClassifier:
             model_data = pickle.load(f)
 
         self.classifier = model_data['classifier']
-        self.scaler = model_data['scaler']
         self.markers = model_data['markers']
         self.cell_types = model_data['cell_types']
-        self.normalize = model_data['normalize']
         self.random_state = model_data['random_state']
 
         self.is_trained = True

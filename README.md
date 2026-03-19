@@ -11,6 +11,8 @@ Provides the CyAnno benchmark module wiring and Python entrypoint.
 This module is intended to run through Omnibenchmark module execution rather
 than a dedicated local `run_*.sh` helper.
 
+It now consumes preprocessing outputs directly without extra model-side feature scaling.
+
 ## Run locally
 
 Use the entrypoint directly with benchmark-style arguments:
