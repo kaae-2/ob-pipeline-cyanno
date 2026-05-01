@@ -11,4 +11,4 @@ python_bin="${script_dir}/.venv/bin/python"
   --data.train_matrix "${script_dir}/out/data/data_preprocessing/default/data_import.train.matrix.tar.gz" \
   --data.train_labels "${script_dir}/out/data/data_preprocessing/default/data_import.train.labels.tar.gz" \
   --data.test_matrix "${script_dir}/out/data/data_preprocessing/default/data_import.test.matrices.tar.gz" \
-  --data.label_key "${script_dir}/out/data/data_preprocessing/default/data_import.label_key.json.gz"
+  --data.metadata "${script_dir}/out/data/data_preprocessing/default/data_import.metadata.json.gz"
