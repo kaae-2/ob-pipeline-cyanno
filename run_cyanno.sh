@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
+python_bin="${script_dir}/.venv/bin/python"
+[ -x "$python_bin" ] || python_bin="python"
+
+"${python_bin}" "${script_dir}/entrypoint_cyanno.py" \
+  --name "cyanno" \
+  --output_dir "${script_dir}/out/data/analysis/default/cyanno" \
+  --data.train_matrix "${script_dir}/out/data/data_preprocessing/default/data_import.train.matrix.tar.gz" \
+  --data.train_labels "${script_dir}/out/data/data_preprocessing/default/data_import.train.labels.tar.gz" \
+  --data.test_matrix "${script_dir}/out/data/data_preprocessing/default/data_import.test.matrices.tar.gz" \
+  --data.label_key "${script_dir}/out/data/data_preprocessing/default/data_import.label_key.json.gz"

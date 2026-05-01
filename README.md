@@ -5,11 +5,13 @@
 Provides the CyAnno benchmark module wiring and Python entrypoint.
 
 - Entrypoint: `entrypoint_cyanno.py`
+- Local runner: `run_cyanno.sh`
 - Pipeline package: `cyanno_pipeline/`
 - Module wrapper metadata: `module/`
 
-This module is intended to run through Omnibenchmark module execution rather
-than a dedicated local `run_*.sh` helper.
+This module is intended to run through Omnibenchmark module execution, but the
+repo also ships `run_cyanno.sh` so `models/run_model.sh` can cover the active
+benchmark analysis set.
 
 It now consumes preprocessing outputs directly without extra model-side feature scaling.
 

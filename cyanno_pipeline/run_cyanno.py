@@ -4,6 +4,7 @@ import os
 import gzip
 import tarfile
 import tempfile
+from tarfile import ReadError
 import pandas as pd
 import warnings
 from pathlib import Path
@@ -43,14 +44,16 @@ def load_dataframe(path, header=None, names=None):
                 if f is None:
                     raise ValueError(f"Unable to read {csv_member.name} from {path}")
                 return pd.read_csv(f, header=header, names=names)
-        except Exception:
-            # If tar fails, try treating it as a misnamed gzip
+        except (ReadError, EOFError, OSError, gzip.BadGzipFile, pd.errors.ParserError) as exc:
+            # If tar parsing fails, try treating it as a misnamed gzip.
+            warnings.warn(f"Falling back to gzip/plain CSV loader for {path}: {exc}")
             return pd.read_csv(path, compression='gzip', header=header, names=names)
     else:
         # Assume gzip or plain text
         try:
             return pd.read_csv(path, header=header, names=names)
-        except:
+        except (OSError, gzip.BadGzipFile, UnicodeDecodeError, pd.errors.ParserError) as exc:
+            warnings.warn(f"Retrying {path} as gzip-compressed CSV: {exc}")
             return pd.read_csv(path, compression='gzip', header=header, names=names)
 
 def main(train_matrix_path, train_labels_path, test_matrix_tar_path, output_path):
